@@ -1,0 +1,38 @@
+plugins {
+    id 'org.springframework.boot' version '2.1.4.RELEASE'
+    id 'java'
+}
+apply plugin: 'io.spring.dependency-management'
+
+group 'de.novatec'
+version '1.0-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnitPlatform()
+}
+
+dependencies {
+    implementation(
+            "org.springframework.boot:spring-boot-starter",
+            "org.hibernate:hibernate-validator:6.1.0.Final"
+    )
+
+    compileOnly "org.projectlombok:lombok:1.18.4"
+    annotationProcessor "org.projectlombok:lombok:1.18.4"
+    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.0'
+
+    implementation group: 'org.influxdb', name: 'influxdb-java', version: '2.15'
+
+    testImplementation(
+            'org.springframework.boot:spring-boot-starter-test:2.1.6.RELEASE',
+            'org.junit.jupiter:junit-jupiter-api:5.3.1',
+            'org.mockito:mockito-junit-jupiter:2.23.0'
+
+    )
+
+}
