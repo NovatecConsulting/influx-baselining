@@ -34,7 +34,7 @@ public class AbstractBaselineDefinition {
     }
 
     @AssertTrue
-    public boolean areWindowsMultiplesOfSeasonality() {
+    public boolean isWindowsMultiplesOfSeasonality() {
         if(windows != null) {
             for(Duration window : windows) {
                 if(window.toMillis() % seasonality.toMillis() != 0) {
