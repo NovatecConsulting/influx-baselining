@@ -1,9 +1,11 @@
 package de.novatec.baselining.config;
 
-import de.novatec.baselining.config.baselines.*;
+import de.novatec.baselining.config.baselines.CounterBaselineDefinition;
+import de.novatec.baselining.config.baselines.CounterRatioBaselineDefinition;
+import de.novatec.baselining.config.baselines.GaugeBaselineDefinition;
+import de.novatec.baselining.config.baselines.RateBaselineDefinition;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.time.DurationMin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;

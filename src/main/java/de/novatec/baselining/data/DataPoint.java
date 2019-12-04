@@ -1,6 +1,5 @@
 package de.novatec.baselining.data;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;

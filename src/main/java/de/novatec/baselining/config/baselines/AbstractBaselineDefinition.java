@@ -35,9 +35,9 @@ public class AbstractBaselineDefinition {
 
     @AssertTrue
     public boolean isWindowsMultiplesOfSeasonality() {
-        if(windows != null) {
-            for(Duration window : windows) {
-                if(window.toMillis() % seasonality.toMillis() != 0) {
+        if (windows != null) {
+            for (Duration window : windows) {
+                if (window.toMillis() % seasonality.toMillis() != 0) {
                     return false;
                 }
             }
@@ -46,7 +46,7 @@ public class AbstractBaselineDefinition {
     }
 
     public List<Duration> getWindowsWithDefault() {
-        if(windows == null) {
+        if (windows == null) {
             return Collections.singletonList(seasonality.multipliedBy(10));
         } else {
             return windows;

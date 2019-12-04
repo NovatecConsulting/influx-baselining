@@ -29,7 +29,7 @@ public class InfluxAccess {
     private InfluxDB influx;
 
     void connect() {
-        if(influx== null) {
+        if (influx == null) {
             OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient().newBuilder()
                     .connectTimeout(config.getConnectTimeout().getSeconds(), TimeUnit.SECONDS)
                     .readTimeout(config.getReadTimeout().getSeconds(), TimeUnit.SECONDS)
@@ -37,7 +37,7 @@ public class InfluxAccess {
 
             boolean userEmpty = StringUtils.isEmpty(config.getUser());
             boolean passwordEmpty = StringUtils.isEmpty(config.getPassword());
-            if(userEmpty && passwordEmpty) {
+            if (userEmpty && passwordEmpty) {
                 influx = InfluxDBFactory.connect(config.getUrl().toString(), okHttpClientBuilder);
             } else {
                 influx = InfluxDBFactory.connect(config.getUrl().toString(), config.getUser(), config.getPassword(), okHttpClientBuilder);
@@ -56,17 +56,17 @@ public class InfluxAccess {
         return query(selectFrom, null, "*", startMillis, endMillis);
     }
 
-    public QueryResult query(String selectFrom,String filter, String groupBy, long startMillis, long endMillis) {
+    public QueryResult query(String selectFrom, String filter, String groupBy, long startMillis, long endMillis) {
         StringBuilder query = new StringBuilder(selectFrom);
         query.append(" WHERE ").append(buildTimeFilter(startMillis, endMillis));
-        if(!StringUtils.isEmpty(filter)) {
+        if (!StringUtils.isEmpty(filter)) {
             query.append(" AND ").append(filter);
         }
         query.append(" GROUP BY ").append(groupBy);
         try {
             connect();
             return influx.query(new Query(query.toString()), TimeUnit.MILLISECONDS);
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             try {
                 influx.close();
             } catch (Exception e) {
@@ -83,22 +83,22 @@ public class InfluxAccess {
     }
 
     public Map<TagValues, List<DataPoint>> queryAggregate(String selectFrom, long startMillis, long endMillis, long intervalMillis) {
-        String groupBy = "*, time("+intervalMillis+"ms) fill(none)";
-        QueryResult queryResult = query(selectFrom,null,groupBy, startMillis, endMillis);
+        String groupBy = "*, time(" + intervalMillis + "ms) fill(none)";
+        QueryResult queryResult = query(selectFrom, null, groupBy, startMillis, endMillis);
         return extractSeriesResults(queryResult);
     }
 
     private Map<TagValues, List<DataPoint>> extractSeriesResults(QueryResult queryResult) {
-        if(queryResult.getError() != null) {
+        if (queryResult.getError() != null) {
             throw new RuntimeException("Influx Returned Error: " + queryResult.getError());
         }
-        if(queryResult.getResults() != null) {
+        if (queryResult.getResults() != null) {
             return queryResult.getResults().stream()
                     .filter(Objects::nonNull)
                     .map(result -> result.getSeries())
                     .filter(Objects::nonNull)
                     .flatMap(List::stream)
-                    .filter(series -> series.getValues()!= null && !series.getValues().isEmpty())
+                    .filter(series -> series.getValues() != null && !series.getValues().isEmpty())
                     .collect(Collectors.toMap(
                             series -> TagValues.from(series.getTags()),
                             series -> seriesToPoints(series)
@@ -109,7 +109,7 @@ public class InfluxAccess {
     }
 
     private List<DataPoint> seriesToPoints(QueryResult.Series series) {
-        if(series.getColumns().size() != 2) {
+        if (series.getColumns().size() != 2) {
             throw new IllegalArgumentException("Query returned more than one non-time field: " + series.getColumns());
         }
         int timeIndex = series.getColumns().indexOf("time");
@@ -117,9 +117,9 @@ public class InfluxAccess {
         return series.getValues().stream()
                 .filter(vals -> vals.get(fieldIndex) != null)
                 .map(values -> DataPoint.builder()
-                    .time(((Number)values.get(timeIndex)).longValue())
-                    .value(((Number)values.get(fieldIndex)).doubleValue())
-                    .build())
+                        .time(((Number) values.get(timeIndex)).longValue())
+                        .value(((Number) values.get(fieldIndex)).doubleValue())
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -132,13 +132,13 @@ public class InfluxAccess {
                             .addField("value", pt.getValue())
                             .build())
                     .collect(Collectors.toList());
-            if(!converted.isEmpty()) {
-                writePoints(database,retention,tags.getTags(),converted);
+            if (!converted.isEmpty()) {
+                writePoints(database, retention, tags.getTags(), converted);
             }
         });
     }
 
-    public void writePoints(String database,String retention, Map<String,String> tags, Collection<Point> points) {
+    public void writePoints(String database, String retention, Map<String, String> tags, Collection<Point> points) {
         BatchPoints.Builder builder = BatchPoints.database(database)
                 .retentionPolicy(retention)
                 .precision(TimeUnit.MILLISECONDS);
@@ -152,7 +152,7 @@ public class InfluxAccess {
         try {
             connect();
             influx.write(builder.build());
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             try {
                 influx.close();
             } catch (Exception e) {

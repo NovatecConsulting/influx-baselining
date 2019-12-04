@@ -3,7 +3,6 @@ package de.novatec.baselining.data;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Value;
 
 import java.util.Comparator;
 
