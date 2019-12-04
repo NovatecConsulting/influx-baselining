@@ -8,12 +8,11 @@ import lombok.NoArgsConstructor;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.time.Duration;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CounterRatioBaselineDefinition extends AbstractTaggedAggregatingBaselineDefinition{
+public class CounterRatioBaselineDefinition extends AbstractTaggedAggregatingBaselineDefinition {
 
     @NotNull
     @Valid

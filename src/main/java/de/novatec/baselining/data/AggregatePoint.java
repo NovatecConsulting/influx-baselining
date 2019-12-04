@@ -1,13 +1,16 @@
 package de.novatec.baselining.data;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
-public class AggregatePoint extends AbstractTimedPoint{
+public class AggregatePoint extends AbstractTimedPoint {
 
     double valuesSum;
 
@@ -39,9 +42,9 @@ public class AggregatePoint extends AbstractTimedPoint{
     public AggregatePoint add(AggregatePoint other) {
         return new AggregatePoint(
                 this.time,
-            this.valuesSum + other.valuesSum,
-            this.squaredValuesSum + other.squaredValuesSum,
-            this.count + other.count);
+                this.valuesSum + other.valuesSum,
+                this.squaredValuesSum + other.squaredValuesSum,
+                this.count + other.count);
     }
 
     public AggregatePoint add(DataPoint point) {
@@ -49,7 +52,7 @@ public class AggregatePoint extends AbstractTimedPoint{
         return new AggregatePoint(
                 this.time,
                 this.valuesSum + value,
-                this.squaredValuesSum + value*value,
+                this.squaredValuesSum + value * value,
                 this.count + 1);
     }
 
@@ -63,7 +66,7 @@ public class AggregatePoint extends AbstractTimedPoint{
 
     public static AggregatePoint from(DataPoint point) {
         double value = point.getValue();
-        return new AggregatePoint(point.getTime(), value, value*value, 1);
+        return new AggregatePoint(point.getTime(), value, value * value, 1);
     }
 
     public static AggregatePoint from(long timestamp, Collection<? extends DataPoint> points) {
@@ -74,7 +77,7 @@ public class AggregatePoint extends AbstractTimedPoint{
                 .sum();
         double sumOfSquares = points.stream()
                 .mapToDouble(DataPoint::getValue)
-                .map(value -> value*value)
+                .map(value -> value * value)
                 .sum();
         return new AggregatePoint(timestamp, sum, sumOfSquares, count);
     }
@@ -82,6 +85,6 @@ public class AggregatePoint extends AbstractTimedPoint{
     @Override
     public String toString() {
         String timeStr = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date(time));
-        return "(t=" + timeStr+" avg="+getAvgValue()+" sqAvg="+getAvgSquaredValue()+" cnt="+getCount()+")";
+        return "(t=" + timeStr + " avg=" + getAvgValue() + " sqAvg=" + getAvgSquaredValue() + " cnt=" + getCount() + ")";
     }
 }

@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class RateBaselineDefinition extends AbstractBaselineDefinition{
+public class RateBaselineDefinition extends AbstractBaselineDefinition {
 
     private String input;
 

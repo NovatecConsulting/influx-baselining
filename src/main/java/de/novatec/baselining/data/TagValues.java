@@ -12,10 +12,10 @@ import java.util.Map;
 public class TagValues {
 
     @Singular
-    private Map<String,String> tags;
+    private Map<String, String> tags;
 
-    public static TagValues from(Map<String,String> tags) {
-        if(tags == null) {
+    public static TagValues from(Map<String, String> tags) {
+        if (tags == null) {
             return TagValues.builder().build();
         } else {
             return TagValues.builder().tags(tags).build();
@@ -24,8 +24,8 @@ public class TagValues {
 
     public TagValues keepOnly(Collection<String> tagKeys) {
         TagValues.TagValuesBuilder result = TagValues.builder();
-        for(String tag : tagKeys) {
-            if(tags.containsKey(tag)) {
+        for (String tag : tagKeys) {
+            if (tags.containsKey(tag)) {
                 result.tag(tag, tags.get(tag));
             }
         }

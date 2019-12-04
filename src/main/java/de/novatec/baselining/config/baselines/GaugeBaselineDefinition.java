@@ -7,12 +7,11 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.List;
 
 @Data()
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class GaugeBaselineDefinition extends AbstractTaggedAggregatingBaselineDefinition{
+public class GaugeBaselineDefinition extends AbstractTaggedAggregatingBaselineDefinition {
 
     @Valid
     @NotNull
