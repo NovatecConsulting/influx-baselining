@@ -26,7 +26,8 @@ dependencies {
     )
 
     implementation(
-            "org.springframework.boot:spring-boot-starter",
+            "org.springframework.boot:spring-boot-starter-web",
+            "org.springframework.boot:spring-boot-starter-actuator",
             "org.hibernate:hibernate-validator:6.1.0.Final",
             "org.influxdb:influxdb-java:2.15",
             "org.apache.commons:commons-math3:3.0"

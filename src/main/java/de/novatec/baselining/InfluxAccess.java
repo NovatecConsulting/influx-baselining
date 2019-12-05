@@ -1,12 +1,9 @@
 package de.novatec.baselining;
 
-import de.novatec.baselining.config.InfluxSettings;
 import de.novatec.baselining.data.DataPoint;
 import de.novatec.baselining.data.TagValues;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
 import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
@@ -23,27 +20,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class InfluxAccess {
 
+    private static final QueryResult EMPTY_QUERY_RESULT = new QueryResult();
+
     @Autowired
-    private InfluxSettings config;
-
     private InfluxDB influx;
-
-    void connect() {
-        if (influx == null) {
-            OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient().newBuilder()
-                    .connectTimeout(config.getConnectTimeout().getSeconds(), TimeUnit.SECONDS)
-                    .readTimeout(config.getReadTimeout().getSeconds(), TimeUnit.SECONDS)
-                    .writeTimeout(config.getWriteTimeout().getSeconds(), TimeUnit.SECONDS);
-
-            boolean userEmpty = StringUtils.isEmpty(config.getUser());
-            boolean passwordEmpty = StringUtils.isEmpty(config.getPassword());
-            if (userEmpty && passwordEmpty) {
-                influx = InfluxDBFactory.connect(config.getUrl().toString(), okHttpClientBuilder);
-            } else {
-                influx = InfluxDBFactory.connect(config.getUrl().toString(), config.getUser(), config.getPassword(), okHttpClientBuilder);
-            }
-        }
-    }
 
     private String buildTimeFilter(long startMillis, long endMillis) {
         return new StringBuilder()
@@ -63,17 +43,12 @@ public class InfluxAccess {
             query.append(" AND ").append(filter);
         }
         query.append(" GROUP BY ").append(groupBy);
+
         try {
-            connect();
             return influx.query(new Query(query.toString()), TimeUnit.MILLISECONDS);
-        } catch (Throwable t) {
-            try {
-                influx.close();
-            } catch (Exception e) {
-                log.error("Error closing influx after exception:", e);
-            }
-            influx = null;
-            throw t;
+        } catch (Exception e) {
+            log.error("Exception while executing InfluxDB query.", e);
+            return EMPTY_QUERY_RESULT;
         }
     }
 
@@ -150,16 +125,9 @@ public class InfluxAccess {
         builder.points(points);
 
         try {
-            connect();
             influx.write(builder.build());
-        } catch (Throwable t) {
-            try {
-                influx.close();
-            } catch (Exception e) {
-                log.error("Error closing influx after exception:", e);
-            }
-            influx = null;
-            throw t;
+        } catch (Exception e) {
+            log.error("Exception while writing InfluxDB data.", e);
         }
     }
 

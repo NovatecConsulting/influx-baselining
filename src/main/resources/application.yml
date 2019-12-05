@@ -1,0 +1,56 @@
+server:
+  port: 8080
+
+spring:
+  influx:
+    # URL of the InfluxDB
+    url: http://localhost:8086
+    # Username for the InfluxDB
+    user: "root"
+    # Password for the InfluxDB
+    password: ""
+
+    ## OPTIONAL: timeout to use when connecting to influx
+    # connect-timeout: 60s
+    ## OPTIONAL: timeout to use when reading data from influx
+    # read-timeout: 60s
+    ## OPTIONAL: timeout to use when writing data to influx
+    # write-timeout: 60s
+
+
+baselining:
+
+  # When starting up, the service will compute baselines based on historical data
+  # This defines how far the service should look into the past
+  backfill: 30d
+
+  # Commonly data takes some time until it actual gets to the influxDB
+  # This property tells the service to wait the given amount of time before updating the baselines.
+  # E.g. a delay of 30s means that the baselines for 14:00 to 15:00 will be computed at 15:00:30
+  update-delay: 30s
+
+#  #Baselines for gauge metrics
+#  gauges:
+#    - precision: 15m
+#      seasonality: 1d
+#      input: baseline.autogen.sinus.value
+#      output: baseline.autogen.sinus_baseline
+#
+#  # Baselines for counters (increase per second)
+#  counters:
+#    - precision: 15m
+#      seasonality: 7d
+#      windows: [28d, 56d]
+#      input: telegraf.autogen.http_requests_count.value
+#      output: baselines.autogen.http_request_rate_weekly
+#      tags: [http_path]
+#
+#  # Baselines for ratio between two counters (e.g. response time)
+#  counter-ratios:
+#    - precision: 15m
+#      seasonality: 1d
+#      windows: [15d, 30d]
+#      input: telegraf.autogen.http_requests_time.counter
+#      divide-by: telegraf.autogen.http_requests_count.counter
+#      output: baselines.autogen.http_time_daily
+#      tags: [http_path]
