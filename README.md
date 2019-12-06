@@ -37,19 +37,21 @@ This value can be baselines too, the joining of the series happens within the ba
 
 ## Configuration
 
-The application is a Spring-Boot application without any interface. It is configured by placing an `application.yml`
-file next to the JAR file.
+The application is a Spring-Boot application. 
+It provides a HTTP endpoint which is running by default on port `8080` which is mainly used for providing health information (`/actuator/health`).
+The application is configured by placing an `application.yml` file next to the JAR file. 
 
 In the `application.yml` it is first required that you configure the connection to influx:
 ```
-influx:
-  url: http://localhost:8086
-  user: "myuser" # OPTIONAL: username used to connect to influx
-  password: "mypw" # OPTIONAL: password used to connect to influx
+spring:
+  influx:
+    url: http://localhost:8086
+    user: "myuser" # OPTIONAL: username used to connect to influx
+    password: "mypw" # OPTIONAL: password used to connect to influx
   
-  connect-timeout: 60s # OPTIONAL: timeout to use when connecting to influx
-  read-timeout: 60s # OPTIONAL: timeout to use when reading data from influx
-  write-timeout: 60s # OPTIONAL: timeout to use when writing data to influx
+    connect-timeout: 60s # OPTIONAL: timeout to use when connecting to influx
+    read-timeout: 60s # OPTIONAL: timeout to use when reading data from influx
+    write-timeout: 60s # OPTIONAL: timeout to use when writing data to influx
 ```
 
 Next you can configure the actual baselining:
