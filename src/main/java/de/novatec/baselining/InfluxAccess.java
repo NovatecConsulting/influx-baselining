@@ -3,12 +3,15 @@ package de.novatec.baselining;
 import de.novatec.baselining.data.DataPoint;
 import de.novatec.baselining.data.TagValues;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.StringSubstitutor;
+import org.apache.commons.text.lookup.StringLookup;
 import org.influxdb.InfluxDB;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.convert.DurationStyle;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -27,9 +30,21 @@ public class InfluxAccess {
 
     private String buildTimeFilter(long startMillis, long endMillis) {
         return new StringBuilder()
-                .append(" time >= ").append(startMillis).append("000000")
-                .append(" AND time < ").append(endMillis).append("000000")
+                .append(" ( time >= ").append(startMillis).append("000000")
+                .append(" AND time < ").append(endMillis).append("000000) ")
                 .toString();
+    }
+
+    public Map<TagValues, List<DataPoint>> queryTemplate(String queryTemplate, long startMillis, long endMillis) {
+        StringLookup lookup = (variable) -> {
+            if (variable.equalsIgnoreCase("timeFilter")) {
+                return buildTimeFilter(startMillis, endMillis);
+            }
+            throw new IllegalArgumentException("Unknown query variable: "+variable);
+        };
+        StringSubstitutor subst = new StringSubstitutor(lookup);
+        String queryString = subst.replace(queryTemplate);
+        return extractSeriesResults(influx.query(new Query(queryString), TimeUnit.MILLISECONDS));
     }
 
     public QueryResult query(String selectFrom, long startMillis, long endMillis) {

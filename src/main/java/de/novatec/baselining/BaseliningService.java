@@ -34,6 +34,7 @@ public class BaseliningService {
         long start = System.currentTimeMillis() - config.getBackfill().toMillis();
         baselines = new ArrayList<>();
         lastUpdatedTimestamp = new HashMap<>();
+        baselines.addAll(buildQueryBaselines());
         baselines.addAll(buildGaugeBaselines());
         baselines.addAll(buildRateBaselines());
         baselines.addAll(buildCounterBaselines());
@@ -67,6 +68,15 @@ public class BaseliningService {
                 log.error("An error occurred updating the baseline", t);
             }
         }
+    }
+
+    private List<BaselineGenerator> buildQueryBaselines() {
+    return config.getQueries().stream()
+                .map(definition -> {
+                    QueryDataSource src = new QueryDataSource(influx, definition);
+                    return buildBaselineGenerator(definition, src);
+                })
+                .collect(Collectors.toList());
     }
 
     private List<BaselineGenerator> buildGaugeBaselines() {

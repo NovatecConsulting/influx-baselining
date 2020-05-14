@@ -1,9 +1,6 @@
 package de.novatec.baselining.config;
 
-import de.novatec.baselining.config.baselines.CounterBaselineDefinition;
-import de.novatec.baselining.config.baselines.CounterRatioBaselineDefinition;
-import de.novatec.baselining.config.baselines.GaugeBaselineDefinition;
-import de.novatec.baselining.config.baselines.RateBaselineDefinition;
+import de.novatec.baselining.config.baselines.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -26,6 +23,7 @@ public class BaselineServiceSettings {
 
     private Duration backfill;
 
+    private List<@Valid QueryBaselineDefinition> queries = new ArrayList<>();
     private List<@Valid GaugeBaselineDefinition> gauges = new ArrayList<>();
     private List<@Valid RateBaselineDefinition> rates = new ArrayList<>();
     private List<@Valid CounterBaselineDefinition> counters = new ArrayList<>();
