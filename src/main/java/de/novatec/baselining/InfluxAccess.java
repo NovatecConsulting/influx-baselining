@@ -5,6 +5,7 @@ import de.novatec.baselining.data.TagValues;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringSubstitutor;
 import org.apache.commons.text.lookup.StringLookup;
+import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
@@ -15,6 +16,7 @@ import org.springframework.boot.convert.DurationStyle;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -27,6 +29,12 @@ public class InfluxAccess {
 
     @Autowired
     private InfluxDB influx;
+
+    @PostConstruct
+    private void configuration() {
+        log.info("Configuring InfluxDB client.");
+        influx.enableBatch(BatchOptions.DEFAULTS);
+    }
 
     private String buildTimeFilter(long startMillis, long endMillis) {
         return new StringBuilder()
@@ -137,6 +145,7 @@ public class InfluxAccess {
                 .stream()
                 .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
                 .forEach(entry -> builder.tag(entry.getKey(), entry.getValue()));
+
         builder.points(points);
 
         try {
@@ -145,5 +154,4 @@ public class InfluxAccess {
             log.error("Exception while writing InfluxDB data.", e);
         }
     }
-
 }

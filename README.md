@@ -35,6 +35,11 @@ The number of requests and the total time spent processing these requests.
 This means that the response time is the ratio of the two: the total time spent divided by the number of requests.
 This value can be baselines too, the joining of the series happens within the baseline generator.
 
+In addition to the "counter", "gauge" and "ratio" baselines, there is also a "query" baseline.
+Here, a query can be used to specify what data should be used for the baseline calculation.
+Based on the data, a mean value will be calculated for the configured precision.
+The specified query should use the placeholder `${timeFilter}`, thus, the application can set the query's time window.
+
 ## Configuration
 
 The application is a Spring-Boot application. 
@@ -97,6 +102,17 @@ baselining:
       divide-by: telegraf.autogen.http_requests_count.counter
       output: baselines.autogen.http_time_daily
       tags: [http_path]
+      
+  queries:
+   - query: |
+       SELECT sum("count") / 60
+       FROM ...
+       WHERE ${timeFilter} AND ...
+       GROUP BY time(60s) fill(0)
+     output: baselines.autogen.system_cpu_usage_daily
+     precision: 15m
+     seasonality: 1d
+     windows: [14d]
 ```
 
 As shown in the examples, each baselines requires you to specify the precision and seasonality which were described above.

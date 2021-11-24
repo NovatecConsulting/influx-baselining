@@ -113,15 +113,20 @@ public class BaselineGenerator {
         allTags.addAll(previousBaselines.keySet());
         allTags.addAll(newData.keySet());
 
+        List<Point> baselinePoints = new LinkedList<>();
+
         for (TagValues tags : allTags) {
             List<AggregatePoint> oldBaseline = previousBaselines.get(tags);
             List<AggregatePoint> newPoints = newData.get(tags);
 
-            updateInfinityBaselineSeriesWithNewData(startInterval, endInterval, tags, oldBaseline, newPoints);
+            List<Point> points = generateInfinityBaselineSeriesWithNewData(startInterval, endInterval, tags, oldBaseline, newPoints);
+            baselinePoints.addAll(points);
         }
+
+        influx.writePoints(outputPrefix.getDatabase(), outputPrefix.getRetention(), Collections.emptyMap(), baselinePoints);
     }
 
-    private void updateInfinityBaselineSeriesWithNewData(long startIntervall, long endIntervall, TagValues tags, List<AggregatePoint> oldBaseline, List<AggregatePoint> newPoints) {
+    private List<Point> generateInfinityBaselineSeriesWithNewData(long startIntervall, long endIntervall, TagValues tags, List<AggregatePoint> oldBaseline, List<AggregatePoint> newPoints) {
         Map<Long, AggregatePoint> intervallToBaselineMap = indexPointsByInterval(oldBaseline);
         Map<Long, AggregatePoint> intervallToDataMap = indexPointsByInterval(newPoints);
 
@@ -140,7 +145,7 @@ public class BaselineGenerator {
             }
         }
 
-        writeBaselinePoints(outputPrefix.getMeasurement() + "_inf", true, tags, outputPoints);
+        return generateBaselinePoints(outputPrefix.getMeasurement() + "_inf", true, tags, outputPoints);
     }
 
     private void updateWindowedBaseline(long startInterval, long endInterval, long windowDuration) {
@@ -153,6 +158,8 @@ public class BaselineGenerator {
         Set<TagValues> allTags = new HashSet<>();
         allTags.addAll(now.keySet());
         allTags.addAll(past.keySet());
+
+        List<Point> baselinePoints = new LinkedList<>();
 
         for (TagValues tags : allTags) {
             Map<Long, AggregatePoint> nowValues = indexPointsByInterval(now.get(tags));
@@ -172,8 +179,11 @@ public class BaselineGenerator {
                 }
             }
 
-            writeBaselinePoints(outputPrefix.getMeasurement() + durationSuffix, false, tags, outputPoints);
+            List<Point> points = generateBaselinePoints(outputPrefix.getMeasurement() + durationSuffix, false, tags, outputPoints);
+            baselinePoints.addAll(points);
         }
+
+        influx.writePoints(outputPrefix.getDatabase(), outputPrefix.getRetention(), Collections.emptyMap(), baselinePoints);
     }
 
     private AggregatePoint computeDelta(AggregatePoint firstPoint, AggregatePoint secondPoint) {
@@ -189,13 +199,15 @@ public class BaselineGenerator {
 
     }
 
-    private void writeBaselinePoints(String measurementName, boolean includeAggregates, TagValues tags, List<AggregatePoint> outputPoints) {
+    private List<Point> generateBaselinePoints(String measurementName, boolean includeAggregates, TagValues tags, List<AggregatePoint> outputPoints) {
         List<Point> points = outputPoints.stream()
-                .map(pt -> toInfluxPoint(pt, measurementName, includeAggregates))
+                .map(pt -> toInfluxPoint(pt, measurementName, tags.getTags(), includeAggregates))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
-        influx.writePoints(outputPrefix.getDatabase(), outputPrefix.getRetention(), tags.getTags(), points);
+
+        return points;
+        // influx.writePoints(outputPrefix.getDatabase(), outputPrefix.getRetention(), tags.getTags(), points);
     }
 
     private AggregatePoint incrementBaseline(AggregatePoint previousBaseline, AggregatePoint newSeasonValue) {
@@ -225,7 +237,7 @@ public class BaselineGenerator {
         return result;
     }
 
-    private Optional<Point> toInfluxPoint(AggregatePoint pt, String measurementName, boolean includeAggregates) {
+    private Optional<Point> toInfluxPoint(AggregatePoint pt, String measurementName, Map<String, String> tags, boolean includeAggregates) {
         if (pt.getCount() == 0) {
             return Optional.empty();
         }
@@ -236,7 +248,9 @@ public class BaselineGenerator {
                 .time(pt.getTime(), TimeUnit.MILLISECONDS)
                 .addField("value", value)
                 .addField("stddev", stddev)
-                .addField("seasons", pt.getCount());
+                .addField("seasons", pt.getCount())
+                .tag(tags);
+
         if (includeAggregates) {
             builder
                     .addField("sum", pt.getValuesSum())

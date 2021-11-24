@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   influx:
@@ -54,3 +54,12 @@ baselining:
 #      divide-by: telegraf.autogen.http_requests_count.counter
 #      output: baselines.autogen.http_time_daily
 #      tags: [http_path]
+#
+#  # Baselines based on data from specific queries
+#  queries:
+#    - query: |
+#        SELECT sum("counter") FROM "inspectit"."autogen"."inspectit_self_duration" WHERE ${timeFilter} GROUP BY time(1m), "component-name" fill(0)
+#      precision: 1m
+#      seasonality: 1d
+#      windows: [14d]
+#      output: inspectit.autogen.baseline
