@@ -33,13 +33,16 @@ public class InfluxAccess {
     @PostConstruct
     private void configuration() {
         log.info("Configuring InfluxDB client.");
-        influx.enableBatch(BatchOptions.DEFAULTS);
+        // influx.enableBatch(BatchOptions.DEFAULTS);
     }
 
     private String buildTimeFilter(long startMillis, long endMillis) {
-        return new StringBuilder()
-                .append(" ( time >= ").append(startMillis).append("000000")
-                .append(" AND time < ").append(endMillis).append("000000) ")
+        return new StringBuilder().append(" ( time >= ")
+                .append(startMillis)
+                .append("000000")
+                .append(" AND time < ")
+                .append(endMillis)
+                .append("000000) ")
                 .toString();
     }
 
@@ -48,7 +51,7 @@ public class InfluxAccess {
             if (variable.equalsIgnoreCase("timeFilter")) {
                 return buildTimeFilter(startMillis, endMillis);
             }
-            throw new IllegalArgumentException("Unknown query variable: "+variable);
+            throw new IllegalArgumentException("Unknown query variable: " + variable);
         };
         StringSubstitutor subst = new StringSubstitutor(lookup);
         String queryString = subst.replace(queryTemplate);
@@ -91,16 +94,14 @@ public class InfluxAccess {
             throw new RuntimeException("Influx Returned Error: " + queryResult.getError());
         }
         if (queryResult.getResults() != null) {
-            return queryResult.getResults().stream()
+            return queryResult.getResults()
+                    .stream()
                     .filter(Objects::nonNull)
                     .map(result -> result.getSeries())
                     .filter(Objects::nonNull)
                     .flatMap(List::stream)
                     .filter(series -> series.getValues() != null && !series.getValues().isEmpty())
-                    .collect(Collectors.toMap(
-                            series -> TagValues.from(series.getTags()),
-                            series -> seriesToPoints(series)
-                    ));
+                    .collect(Collectors.toMap(series -> TagValues.from(series.getTags()), series -> seriesToPoints(series)));
         }
 
         return Collections.emptyMap();
@@ -112,7 +113,8 @@ public class InfluxAccess {
         }
         int timeIndex = series.getColumns().indexOf("time");
         int fieldIndex = timeIndex == 0 ? 1 : 0;
-        return series.getValues().stream()
+        return series.getValues()
+                .stream()
                 .filter(vals -> vals.get(fieldIndex) != null)
                 .map(values -> DataPoint.builder()
                         .time(((Number) values.get(timeIndex)).longValue())
@@ -124,8 +126,7 @@ public class InfluxAccess {
     public void writePoints(String database, String retention, String measurement, Map<TagValues, ? extends Collection<DataPoint>> points) {
         points.forEach((tags, pts) -> {
             List<Point> converted = pts.stream()
-                    .map(pt -> Point
-                            .measurement(measurement)
+                    .map(pt -> Point.measurement(measurement)
                             .time(pt.getTime(), TimeUnit.MILLISECONDS)
                             .addField("value", pt.getValue())
                             .build())
@@ -136,22 +137,49 @@ public class InfluxAccess {
         });
     }
 
-    public void writePoints(String database, String retention, Map<String, String> tags, Collection<Point> points) {
-        BatchPoints.Builder builder = BatchPoints.database(database)
-                .retentionPolicy(retention)
-                .precision(TimeUnit.MILLISECONDS);
+    public void writePoints(String database, String retention, Map<String, String> tags, List<Point> points) {
+        // writing in chunks
+        int chunkSize = 25_000;
+        int startIndex = 0;
+        int endIndex = Math.min(points.size(), chunkSize);
+        boolean done = false;
 
-        tags.entrySet()
-                .stream()
-                .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
-                .forEach(entry -> builder.tag(entry.getKey(), entry.getValue()));
+        while (!done) {
+            List<Point> chunk = points.subList(startIndex, endIndex);
 
-        builder.points(points);
+            BatchPoints.Builder builder = BatchPoints.database(database)
+                    .retentionPolicy(retention)
+                    .precision(TimeUnit.MILLISECONDS);
 
+            tags.entrySet()
+                    .stream()
+                    .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
+                    .forEach(entry -> builder.tag(entry.getKey(), entry.getValue()));
+
+            BatchPoints batchPoints = builder.points(chunk).build();
+            writePoints(batchPoints);
+
+            if (endIndex == points.size()) {
+                done = true;
+            } else {
+                startIndex = endIndex;
+                endIndex = Math.min(points.size(), (endIndex + chunkSize));
+            }
+        }
+    }
+
+    private void writePoints(BatchPoints batchPoints) {
+        log.info("Writing {} points into the InfluxDB", batchPoints.getPoints().size());
         try {
-            influx.write(builder.build());
-        } catch (Exception e) {
-            log.error("Exception while writing InfluxDB data.", e);
+            influx.write(batchPoints);
+        } catch (Exception first) {
+            try {
+                log.error("Exception while writing InfluxDB data but it is tried once more in 2 seconds.");
+                Thread.sleep(2000);
+                influx.write(batchPoints);
+            } catch (Exception second) {
+                log.error("Exception while writing InfluxDB data.", second);
+            }
         }
     }
 }
