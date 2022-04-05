@@ -29,7 +29,7 @@ For gauges this application will simply use the mean value as baseline.
 For counters the increase per second will be baselined. For example given a counter for the HTTP requests,
  the resulting baseline will denote the expected average requests per second in the interval specified by the precision.
  
-In addition it is possible to baseline response times which are derived from counters:
+In addition, it is possible to baseline response times which are derived from counters:
 With Prometheus-style metrics, response times are represented using two different counters:
 The number of requests and the total time spent processing these requests.
 This means that the response time is the ratio of the two: the total time spent divided by the number of requests.
@@ -115,7 +115,7 @@ baselining:
      windows: [14d]
 ```
 
-As shown in the examples, each baselines requires you to specify the precision and seasonality which were described above.
+As shown in the examples, each baseline requires you to specify the precision and seasonality which were described above.
 
 In addition, input series are defined in the form `<database>.<retention>.<measurement>.<field>`.
 The name of the output baseline is defined as `<database>.<retention>.<measurement>`.
@@ -129,10 +129,15 @@ In the example above, the response time baseline defines `http_time_daily` as ou
 As result, the service will generate two measurements: `http_time_daily_15d` and `http_time_daily_30d`.
 The measurements contain two fields: `value`, which is the baseline and `stddev` which is the standard deviation.
 
-By default the baseline service will preserve all tags from the input measurement.
+By default, the baseline service will preserve all tags from the input measurement.
 When this is not the intended behaviour, it is possible to keep only certain tags (or none).
 The values of all other tags will be aggregated together.
 
 For example, if we assume that the `http_requests_count` measurement has two tags (`http_path` and `http_status`),
 we can specify `tags: [http_path]` as shown above. This means that the baseline will be generated for each http_path individually,
 however the `http_status` will not be used for differentiation.
+
+## SBOM
+
+To generate a software bill of materials (SBOM), execute the gradle task cyclonedxBom.
+It will save the BOM into the folder build/reports.
