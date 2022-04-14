@@ -139,5 +139,5 @@ however the `http_status` will not be used for differentiation.
 
 ## SBOM
 
-To generate a software bill of materials (SBOM), execute the gradle task cyclonedxBom.
+To generate a software bill of materials (SBOM), execute the gradle task `cyclonedxBom`.
 It will save the BOM into the folder build/reports.
