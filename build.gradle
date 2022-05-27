@@ -1,6 +1,7 @@
 plugins {
     id 'org.springframework.boot' version "${springboot_version}"
     id 'java'
+    id "org.cyclonedx.bom" version "1.5.0"
 }
 apply plugin: 'io.spring.dependency-management'
 
@@ -38,4 +39,8 @@ dependencies {
             'org.springframework.boot:spring-boot-starter-test',
             'org.mockito:mockito-junit-jupiter:2.23.0'
     )
+}
+
+cyclonedxBom {
+    includeConfigs += ["runtimeClasspath"]
 }
