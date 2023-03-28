@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot' version "2.7.10"
     id 'java'
     id "org.cyclonedx.bom" version "1.7.4"
+    id "org.owasp.dependencycheck" version "8.0.2"
 }
 apply plugin: 'io.spring.dependency-management'
 
@@ -31,6 +32,7 @@ dependencies {
             "org.springframework.boot:spring-boot-starter-actuator",
             "org.hibernate.validator:hibernate-validator",
             "org.influxdb:influxdb-java",
+            "org.yaml:snakeyaml:2.0",
             "org.apache.commons:commons-math3:3.6.1",
             "org.apache.commons:commons-text:1.10.0"
     )
