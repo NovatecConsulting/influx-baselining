@@ -8,4 +8,7 @@ updates:
       - "gradle"
       - "dependencies"
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "org.springframework.boot"
+        update-types: [ "version-update:semver-major" ]
 
