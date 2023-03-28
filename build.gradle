@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version "2.7.10"
+    id 'org.springframework.boot' version "3.0.5"
     id 'java'
     id "org.cyclonedx.bom" version "1.7.4"
 }
