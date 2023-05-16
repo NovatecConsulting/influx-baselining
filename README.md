@@ -3,6 +3,8 @@
 This project is a standalone application which generates baselines on live and historical data stored in InfluxDB.
 The baselines are written back as series to Influx.
 
+Since version 2.0 Java 17 is required.
+
 ## Introduction
 
 Baselines are seasonality based: E.g. a daily baseline is computed by averaging the observed values from the past days at the same hour of the day.
