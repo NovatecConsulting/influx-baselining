@@ -52,11 +52,8 @@ cyclonedxBom {
     schemaVersion = "1.4"
 }
 
-def releaseDirectory = layout.buildDirectory.dir("release")
-
 tasks.register("packageBoms", Zip) {
     archiveFileName.set("software-bill-of-materials.zip")
-    destinationDirectory.set(releaseDirectory)
     from(cyclonedxBom.outputs){
         include ("bom.*")
     }
@@ -65,5 +62,6 @@ tasks.register("packageBoms", Zip) {
 tasks.register("release", Copy) {
     dependsOn packageBoms
     from(bootJar.outputs)
-    into(releaseDirectory)
+    from(packageBoms.outputs)
+    into(layout.buildDirectory.dir("release"))
 }
