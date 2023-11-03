@@ -1,14 +1,20 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+
 plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'java'
     id "org.cyclonedx.bom" version "1.7.4"
     id "org.owasp.dependencycheck" version "8.4.0"
+    id "com.github.ben-manes.versions" version "0.49.0"
 }
 apply plugin: 'io.spring.dependency-management'
 
 group 'de.novatec'
 version '2.2'
-sourceCompatibility = '17'
+
+java {
+    sourceCompatibility = '17'
+}
 
 repositories {
     mavenCentral()
@@ -50,6 +56,66 @@ dependencies {
             "org.junit.jupiter:junit-jupiter",
             "org.assertj:assertj-core"
     )
+}
+
+dependencyCheck {
+    failBuildOnCVSS = 6
+    analyzers {
+        assemblyEnabled = false
+        ossIndex {
+            enabled = true
+        }
+    }
+}
+
+def isNonStable = { String candidate ->
+    def stableKeyword = ['RELEASE', 'FINAL', 'GA', 'JRE'].any { it -> candidate.toUpperCase().contains(it) }
+    def versionRegex = /^[0-9,.v-]+(-r)?$/
+    return !stableKeyword && !(candidate ==~ versionRegex)
+}
+
+def isNotSameMajorMinor = { String current, String candidate, boolean matchMinor ->
+    if(current.equals(candidate)) return false
+
+    def firstDot = current.indexOf('.')
+    def secondDot = current.indexOf('.', firstDot + 1)
+    def major = current.substring(0, firstDot)
+    def minor = current.substring(firstDot + 1, secondDot)
+    def majorRegex = /^$major\..*/
+    def minorRegex = /^$major\.${minor}\..*/
+    return !((candidate ==~ majorRegex) && (!matchMinor || (candidate ==~ minorRegex)))
+}
+
+tasks.named("dependencyUpdates").configure {
+    rejectVersionIf {
+        // only patch updates
+        isNonStable(it.candidate.version) || isNotSameMajorMinor(it.currentVersion, it.candidate.version, true)
+    }
+}
+
+tasks.register('dependencyUpdatesMinor', DependencyUpdatesTask) {
+    rejectVersionIf {
+        // only minor updates
+        isNonStable(it.candidate.version) || isNotSameMajorMinor(it.currentVersion, it.candidate.version, false)
+    }
+}
+
+tasks.register('dependencyUpdatesMajor', DependencyUpdatesTask) {
+    rejectVersionIf {
+        // all updates including major updates
+        isNonStable(it.candidate.version)
+    }
+}
+
+tasks.withType(DependencyUpdatesTask).configureEach {
+    // default settings
+    revision = 'milestone'
+    gradleReleaseChannel = "current"
+    checkConstraints = true
+    checkBuildEnvironmentConstraints = true
+    outputFormatter = 'json,plain'
+    outputDir = 'build/reports'
+    reportfileName = 'dependencyUpdates'
 }
 
 cyclonedxBom {
