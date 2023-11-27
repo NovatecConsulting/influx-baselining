@@ -4,7 +4,7 @@ plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'java'
     id "org.cyclonedx.bom" version "1.7.4"
-    id "org.owasp.dependencycheck" version "8.4.0"
+    id "org.owasp.dependencycheck" version "9.0.1"
     id "com.github.ben-manes.versions" version "0.49.0"
 }
 apply plugin: 'io.spring.dependency-management'
