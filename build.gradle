@@ -117,6 +117,8 @@ tasks.withType(DependencyUpdatesTask).configureEach {
 cyclonedxBom {
     includeConfigs = ["runtimeClasspath"]
     schemaVersion = "1.4"
+    outputName = "bom"
+    outputFormat = "all"
 }
 
 tasks.register("packageBoms", Zip) {
