@@ -53,7 +53,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v3
         with:
-          name: dependency-check-report-eum-server
+          name: dependency-check-report-baselining
           path: ${{ github.workspace }}/reports
       # if DependencyCheck failed, the job should also fail, but only after the results were uploaded
       - name: Validate DependencyCheck outcome
