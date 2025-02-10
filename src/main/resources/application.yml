@@ -1,22 +1,17 @@
 server:
   port: 8081
 
-spring:
-  influx:
-    # URL of the InfluxDB
-    url: http://localhost:8086
-    # Username for the InfluxDB
-    user: "root"
-    # Password for the InfluxDB
-    password: ""
-
-    ## OPTIONAL: timeout to use when connecting to influx
-    # connect-timeout: 60s
-    ## OPTIONAL: timeout to use when reading data from influx
-    # read-timeout: 60s
-    ## OPTIONAL: timeout to use when writing data to influx
-    # write-timeout: 60s
-
+influx:
+  url: http://localhost:8086
+  username: "root"
+  password: ""
+  token: ""
+  ## OPTIONAL: timeout to use when connecting to influx
+  connect-timeout: 60s
+  ## OPTIONAL: timeout to use when reading data from influx
+  read-timeout: 60s
+  ## OPTIONAL: timeout to use when writing data to influx
+  write-timeout: 60s
 
 baselining:
 

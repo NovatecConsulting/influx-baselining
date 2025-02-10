@@ -1,6 +1,6 @@
 package de.novatec.baselining.datasources;
 
-import de.novatec.baselining.InfluxAccess;
+import de.novatec.baselining.influx.InfluxAccess;
 import de.novatec.baselining.config.baselines.GaugeBaselineDefinition;
 import de.novatec.baselining.config.measurement.MeasurementName;
 import de.novatec.baselining.data.AggregatePoint;
@@ -17,8 +17,9 @@ import java.util.Map;
 @Slf4j
 public class GaugeDataSource implements BaselineDataSource {
 
-
     private InfluxAccess influx;
+
+    private String database;
 
     private String query;
 
@@ -30,6 +31,7 @@ public class GaugeDataSource implements BaselineDataSource {
 
     public GaugeDataSource(InfluxAccess influx, GaugeBaselineDefinition settings) {
         this.influx = influx;
+        this.database = settings.getOutput().getDatabase();
         this.query = "SELECT MEAN(" + settings.getInput().getField() + ") FROM " + settings.getInput().getFullMeasurementName();
         this.tags = settings.getTags();
         this.samplePrecisionMillis = settings.getSamplePrecision().toMillis();
@@ -41,7 +43,7 @@ public class GaugeDataSource implements BaselineDataSource {
         long start = startInterval * intervalMillis;
         long end = endInterval * intervalMillis;
 
-        Map<TagValues, List<DataPoint>> rawPoints = influx.queryAggregate(query, start, end, samplePrecisionMillis);
+        Map<TagValues, List<DataPoint>> rawPoints = influx.queryAggregate(database, query, start, end, samplePrecisionMillis);
 
         if (tags != null) {
             rawPoints = Aggregations.aggregateByTags(tags, rawPoints, (a, b) -> {
@@ -53,7 +55,7 @@ public class GaugeDataSource implements BaselineDataSource {
 
 
         if (rawOuput != null) {
-            influx.writePoints(rawOuput.getDatabase(), rawOuput.getRetention(), rawOuput.getMeasurement(), rawPoints);
+            influx.writePoints(rawOuput.getDatabase(), rawOuput.getMeasurement(), rawPoints);
         }
 
         return Transformations.meanByInterval(rawPoints, intervalMillis);

@@ -1,6 +1,6 @@
 package de.novatec.baselining.datasources;
 
-import de.novatec.baselining.InfluxAccess;
+import de.novatec.baselining.influx.InfluxAccess;
 import de.novatec.baselining.config.baselines.CounterBaselineDefinition;
 import de.novatec.baselining.config.measurement.MeasurementName;
 import de.novatec.baselining.data.AggregatePoint;
@@ -17,8 +17,9 @@ import java.util.Map;
 @Slf4j
 public class CounterDataSource implements BaselineDataSource {
 
-
     private InfluxAccess influx;
+
+    private String database;
 
     private String query;
 
@@ -32,6 +33,7 @@ public class CounterDataSource implements BaselineDataSource {
 
     public CounterDataSource(InfluxAccess influx, CounterBaselineDefinition settings) {
         this.influx = influx;
+        this.database = settings.getOutput().getDatabase();
         this.query = "SELECT LAST(" + settings.getInput().getField() + ") FROM " + settings.getInput().getFullMeasurementName();
         this.tags = settings.getTags();
         this.lookBackMillis = settings.getLookBack().toMillis();
@@ -44,7 +46,7 @@ public class CounterDataSource implements BaselineDataSource {
         long start = startInterval * intervalMillis;
         long end = endInterval * intervalMillis;
 
-        Map<TagValues, List<DataPoint>> data = influx.queryAggregate(query, start - lookBackMillis, end, samplePrecisionMillis);
+        Map<TagValues, List<DataPoint>> data = influx.queryAggregate(database, query, start - lookBackMillis, end, samplePrecisionMillis);
 
         data = Transformations.rateSince(data, start, Duration.ofSeconds(1));
 
@@ -55,7 +57,7 @@ public class CounterDataSource implements BaselineDataSource {
         }
 
         if (rawOuput != null) {
-            influx.writePoints(rawOuput.getDatabase(), rawOuput.getRetention(), rawOuput.getMeasurement(), data);
+            influx.writePoints(rawOuput.getDatabase(), rawOuput.getMeasurement(), data);
         }
         return Transformations.meanByInterval(data, intervalMillis);
     }

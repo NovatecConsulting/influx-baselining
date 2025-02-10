@@ -4,6 +4,7 @@ import de.novatec.baselining.baselines.BaselineGenerator;
 import de.novatec.baselining.config.BaselineServiceSettings;
 import de.novatec.baselining.config.baselines.AbstractBaselineDefinition;
 import de.novatec.baselining.datasources.*;
+import de.novatec.baselining.influx.InfluxAccess;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

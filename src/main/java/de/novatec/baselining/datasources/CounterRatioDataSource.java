@@ -1,6 +1,6 @@
 package de.novatec.baselining.datasources;
 
-import de.novatec.baselining.InfluxAccess;
+import de.novatec.baselining.influx.InfluxAccess;
 import de.novatec.baselining.config.baselines.CounterRatioBaselineDefinition;
 import de.novatec.baselining.config.measurement.MeasurementName;
 import de.novatec.baselining.data.AggregatePoint;
@@ -19,10 +19,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CounterRatioDataSource implements BaselineDataSource {
 
-
     private InfluxAccess influx;
 
+    private String database;
+
     private String numeratorQuery;
+
     private String denominatorQuery;
 
     private List<String> tags;
@@ -35,6 +37,7 @@ public class CounterRatioDataSource implements BaselineDataSource {
 
     public CounterRatioDataSource(InfluxAccess influx, CounterRatioBaselineDefinition settings) {
         this.influx = influx;
+        this.database = settings.getOutput().getDatabase();
         this.numeratorQuery = "SELECT LAST(" + settings.getInput().getField() + ") FROM " + settings.getInput().getFullMeasurementName();
         this.denominatorQuery = "SELECT LAST(" + settings.getDivideBy().getField() + ") FROM " + settings.getDivideBy().getFullMeasurementName();
         this.tags = settings.getTags();
@@ -49,8 +52,8 @@ public class CounterRatioDataSource implements BaselineDataSource {
         long start = startInterval * intervalMillis;
         long end = endInterval * intervalMillis;
 
-        Map<TagValues, List<DataPoint>> numerators = influx.queryAggregate(numeratorQuery, start - lookBackMillis, end, samplePrecisionMillis);
-        Map<TagValues, List<DataPoint>> denominators = influx.queryAggregate(denominatorQuery, start - lookBackMillis, end, samplePrecisionMillis);
+        Map<TagValues, List<DataPoint>> numerators = influx.queryAggregate(database, numeratorQuery, start - lookBackMillis, end, samplePrecisionMillis);
+        Map<TagValues, List<DataPoint>> denominators = influx.queryAggregate(database, denominatorQuery, start - lookBackMillis, end, samplePrecisionMillis);
 
 
         if (tags != null) {
@@ -65,7 +68,7 @@ public class CounterRatioDataSource implements BaselineDataSource {
         Map<TagValues, List<DataPoint>> averages = divideCounters(start, numerators, denominators);
 
         if (rawOuput != null) {
-            influx.writePoints(rawOuput.getDatabase(), rawOuput.getRetention(), rawOuput.getMeasurement(), averages);
+            influx.writePoints(rawOuput.getDatabase(), rawOuput.getMeasurement(), averages);
         }
 
         return Transformations.meanByInterval(averages, intervalMillis);

@@ -1,4 +1,4 @@
-package de.novatec.baselining;
+package de.novatec.baselining.influx;
 
 import java.time.Duration;
 

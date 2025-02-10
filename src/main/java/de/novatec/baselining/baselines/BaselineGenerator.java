@@ -1,7 +1,9 @@
 package de.novatec.baselining.baselines;
 
-import de.novatec.baselining.InfluxAccess;
-import de.novatec.baselining.InfluxUtils;
+import com.influxdb.client.domain.WritePrecision;
+import com.influxdb.query.InfluxQLQueryResult;
+import de.novatec.baselining.influx.InfluxAccess;
+import de.novatec.baselining.influx.InfluxUtils;
 import de.novatec.baselining.config.baselines.AbstractBaselineDefinition;
 import de.novatec.baselining.config.measurement.MeasurementName;
 import de.novatec.baselining.data.AbstractTimedPoint;
@@ -9,8 +11,7 @@ import de.novatec.baselining.data.AggregatePoint;
 import de.novatec.baselining.data.TagValues;
 import de.novatec.baselining.datasources.BaselineDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.influxdb.dto.Point;
-import org.influxdb.dto.QueryResult;
+import com.influxdb.client.write.Point;
 
 import java.time.Duration;
 import java.util.*;
@@ -25,6 +26,8 @@ public class BaselineGenerator {
 
     private InfluxAccess influx;
 
+    private String database;
+
     private BaselineDataSource src;
 
     private long precisionMillis;
@@ -37,6 +40,7 @@ public class BaselineGenerator {
 
     public BaselineGenerator(InfluxAccess influx, BaselineDataSource src, AbstractBaselineDefinition definition) {
         this.influx = influx;
+        this.database = definition.getOutput().getDatabase();
         this.src = src;
         this.precisionMillis = definition.getPrecision().toMillis();
         this.seasonalityMillis = definition.getSeasonality().toMillis();
@@ -53,7 +57,7 @@ public class BaselineGenerator {
      * Therefore it is required, that at least the amount of time returned by this method has passed
      * before invoking {@link #updateBaselines(long, long)}.
      *
-     * @return the number of milli seconds to delay the baseline computation
+     * @return the number of milliseconds to delay the baseline computation
      */
     public long getMinimumDelayMillis() {
         return src.getMinimumDelayMillis();
@@ -63,7 +67,7 @@ public class BaselineGenerator {
      * A suggestion on the maximum number of milliseconds between the start and the end timestamp
      * when invoking {@link #updateBaselines(long, long)}.
      * <p>
-     * This minimized therisk of read or write timeouts when generating baselines.
+     * This minimizes risk of read or write timeouts when generating baselines.
      *
      * @return the number of milliseconds
      */
@@ -72,13 +76,13 @@ public class BaselineGenerator {
     }
 
     /**
-     * Updates the baselines from the given start timestamp to the epoche timestamp.
+     * Updates the baselines from the given start timestamp to the epoch timestamp.
      * Because baselines actually do operate on intervals,
      * the baseline computation will start with the interval in which the start timestamp lies (inclusive)
      * and end with the interval within which the end timestamp lies (exclusive).
      *
-     * @param startMillis the start timestamp since the epoche
-     * @param endMillis   he start timestamp since the epoche
+     * @param startMillis the start timestamp since the epoch
+     * @param endMillis   the start timestamp since the epoch
      */
     public void updateBaselines(long startMillis, long endMillis) {
         long startInterval = getIntervalIndex(startMillis);
@@ -105,7 +109,7 @@ public class BaselineGenerator {
         long seasonIntervalCount = getIntervalIndex(seasonalityMillis);
 
         long previousRelevant = Math.min(endInterval, startInterval + seasonIntervalCount);
-        Map<TagValues, List<AggregatePoint>> previousBaselines = fetchInfinityBaselines(startInterval, previousRelevant);
+        Map<TagValues, List<AggregatePoint>> previousBaselines = fetchInfinityBaselines(database, startInterval, previousRelevant);
 
         Map<TagValues, List<AggregatePoint>> newData = src.fetch(precisionMillis, startInterval, endInterval);
 
@@ -123,19 +127,19 @@ public class BaselineGenerator {
             baselinePoints.addAll(points);
         }
 
-        influx.writePoints(outputPrefix.getDatabase(), outputPrefix.getRetention(), Collections.emptyMap(), baselinePoints);
+        influx.writePoints(outputPrefix.getDatabase(), Collections.emptyMap(), baselinePoints);
     }
 
-    private List<Point> generateInfinityBaselineSeriesWithNewData(long startIntervall, long endIntervall, TagValues tags, List<AggregatePoint> oldBaseline, List<AggregatePoint> newPoints) {
+    private List<Point> generateInfinityBaselineSeriesWithNewData(long startInterval, long endInterval, TagValues tags, List<AggregatePoint> oldBaseline, List<AggregatePoint> newPoints) {
         Map<Long, AggregatePoint> intervallToBaselineMap = indexPointsByInterval(oldBaseline);
         Map<Long, AggregatePoint> intervallToDataMap = indexPointsByInterval(newPoints);
 
         List<AggregatePoint> outputPoints = new ArrayList<>();
 
-        for (long intervall = startIntervall; intervall < endIntervall; intervall++) {
+        for (long interval = startInterval; interval < endInterval; interval++) {
 
-            AggregatePoint previousBaseline = intervallToBaselineMap.get(intervall);
-            AggregatePoint newValue = intervallToDataMap.get(intervall);
+            AggregatePoint previousBaseline = intervallToBaselineMap.get(interval);
+            AggregatePoint newValue = intervallToDataMap.get(interval);
 
             AggregatePoint resultBaseline = incrementBaseline(previousBaseline, newValue);
 
@@ -150,10 +154,10 @@ public class BaselineGenerator {
 
     private void updateWindowedBaseline(long startInterval, long endInterval, long windowDuration) {
         String durationSuffix = "_" + InfluxUtils.prettyPrintDuration(windowDuration);
-        long windowIntervallCount = windowDuration / precisionMillis;
+        long windowIntervalCount = windowDuration / precisionMillis;
 
-        Map<TagValues, List<AggregatePoint>> now = fetchInfinityBaselines(startInterval, endInterval);
-        Map<TagValues, List<AggregatePoint>> past = fetchInfinityBaselines(startInterval - windowIntervallCount, endInterval - windowIntervallCount);
+        Map<TagValues, List<AggregatePoint>> now = fetchInfinityBaselines(database, startInterval, endInterval);
+        Map<TagValues, List<AggregatePoint>> past = fetchInfinityBaselines(database, startInterval - windowIntervalCount, endInterval - windowIntervalCount);
 
         Set<TagValues> allTags = new HashSet<>();
         allTags.addAll(now.keySet());
@@ -169,7 +173,7 @@ public class BaselineGenerator {
 
             for (long intervall = startInterval; intervall < endInterval; intervall++) {
 
-                AggregatePoint previousPoint = pastValues.get(intervall - windowIntervallCount);
+                AggregatePoint previousPoint = pastValues.get(intervall - windowIntervalCount);
                 AggregatePoint nowPoint = nowValues.get(intervall);
 
                 AggregatePoint resultBaseline = computeDelta(previousPoint, nowPoint);
@@ -183,7 +187,7 @@ public class BaselineGenerator {
             baselinePoints.addAll(points);
         }
 
-        influx.writePoints(outputPrefix.getDatabase(), outputPrefix.getRetention(), Collections.emptyMap(), baselinePoints);
+        influx.writePoints(outputPrefix.getDatabase(), Collections.emptyMap(), baselinePoints);
     }
 
     private AggregatePoint computeDelta(AggregatePoint firstPoint, AggregatePoint secondPoint) {
@@ -205,9 +209,7 @@ public class BaselineGenerator {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
-
         return points;
-        // influx.writePoints(outputPrefix.getDatabase(), outputPrefix.getRetention(), tags.getTags(), points);
     }
 
     private AggregatePoint incrementBaseline(AggregatePoint previousBaseline, AggregatePoint newSeasonValue) {
@@ -227,11 +229,11 @@ public class BaselineGenerator {
         Map<Long, PT> result = new HashMap<>();
         if (points != null) {
             for (PT pt : points) {
-                long intervall = getIntervalIndex(pt.getTime());
-                if (result.containsKey(intervall)) {
-                    throw new IllegalArgumentException("Input point set contains multiple points falling into the same intervall!");
+                long interval = getIntervalIndex(pt.getTime());
+                if (result.containsKey(interval)) {
+                    throw new IllegalArgumentException("Input point set contains multiple points falling into the same interval!");
                 }
-                result.put(intervall, pt);
+                result.put(interval, pt);
             }
         }
         return result;
@@ -243,61 +245,54 @@ public class BaselineGenerator {
         }
         double value = pt.getAvgValue();
         double stddev = Math.sqrt(Math.max(0, pt.getAvgSquaredValue() - value * value));
-        Point.Builder builder = Point
-                .measurement(measurementName)
-                .time(pt.getTime(), TimeUnit.MILLISECONDS)
-                .addField("value", value)
-                .addField("stddev", stddev)
-                .addField("seasons", pt.getCount())
-                .tag(tags);
+
+        Point point = new Point(measurementName);
+        point.time(pt.getTime(), WritePrecision.NS)  // TODO Passt das? Von wo kommt time?
+            .addField("value", value)
+            .addField("stddev", stddev)
+            .addField("seasons", pt.getCount())
+            .addTags(tags);
 
         if (includeAggregates) {
-            builder
-                    .addField("sum", pt.getValuesSum())
-                    .addField("sumSq", pt.getSquaredValuesSum());
+            point.addField("sum", pt.getValuesSum())
+                .addField("sumSq", pt.getSquaredValuesSum());
         }
-        return Optional.of(builder.build());
+        return Optional.of(point);
     }
 
-    private Map<TagValues, List<AggregatePoint>> fetchInfinityBaselines(long startIntervall, long endIntervall) {
+    private Map<TagValues, List<AggregatePoint>> fetchInfinityBaselines(String database, long startIntervall, long endIntervall) {
         long start = startIntervall * precisionMillis;
         long end = endIntervall * precisionMillis;
 
         String query = "SELECT sum, sumSq, seasons FROM " + outputPrefix.getFullMeasurementName() + "_inf";
-        QueryResult result = influx.query(query, start, end);
+        InfluxQLQueryResult result = influx.query(database, query, start, end);
 
-        Map<TagValues, List<AggregatePoint>> baselines = new HashMap<>();
-
-        if (result.getResults() != null) {
-            return result.getResults().stream()
-                    .filter(Objects::nonNull)
-                    .map(QueryResult.Result::getSeries)
-                    .filter(Objects::nonNull)
-                    .flatMap(List::stream)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toMap(
-                            series -> TagValues.from(series.getTags()),
-                            series -> decodeBaselinePoints(series)
-                    ));
-        }
-        return Collections.emptyMap();
+        Map<TagValues, List<AggregatePoint>> baselines = result.getResults().stream()
+                .filter(Objects::nonNull)
+                .map(InfluxQLQueryResult.Result::getSeries)
+                .flatMap(List::stream)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        series -> TagValues.from(series.getTags()),
+                        series -> decodeBaselinePoints(series)
+                ));
+        return baselines;
     }
 
-    private List<AggregatePoint> decodeBaselinePoints(QueryResult.Series series) {
-
-        int timeIdx = series.getColumns().indexOf("time");
-        int seasonsIdx = series.getColumns().indexOf("seasons");
-        int sumIdx = series.getColumns().indexOf("sum");
-        int sumSqIdx = series.getColumns().indexOf("sumSq");
+    private List<AggregatePoint> decodeBaselinePoints(InfluxQLQueryResult.Series series) {
+        int timeIdx = series.getColumns().get("time");
+        int seasonsIdx = series.getColumns().get("seasons");
+        int sumIdx = series.getColumns().get("sum");
+        int sumSqIdx = series.getColumns().get("sumSq");
 
         List<AggregatePoint> baselinePoints = new ArrayList<>();
 
-        for (List<Object> values : series.getValues()) {
-
-            Object time = values.get(timeIdx);
-            Object seasons = values.get(seasonsIdx);
-            Object sum = values.get(sumIdx);
-            Object sumSq = values.get(sumSqIdx);
+        for (InfluxQLQueryResult.Series.Record record : series.getValues()) {
+            Object[] values = record.getValues();
+            Object time = values[timeIdx];
+            Object seasons = values[seasonsIdx];
+            Object sum = values[sumIdx];
+            Object sumSq = values[sumSqIdx];
 
             if (time instanceof Number && seasons instanceof Number && sum instanceof Number && sumSq instanceof Number) {
                 AggregatePoint pt = AggregatePoint.builder()
@@ -307,6 +302,23 @@ public class BaselineGenerator {
                         .squaredValuesSum(((Number) sumSq).doubleValue())
                         .build();
                 baselinePoints.add(pt);
+            }
+
+            try {
+                // convert ns to ms
+                long timeValue = Long.parseLong(time.toString()) / 1000 / 1000;
+                long countValue = Long.parseLong(seasons.toString());
+                double sumValue = Double.parseDouble(sum.toString());
+                double sumSqValue = Double.parseDouble(sumSq.toString());
+                AggregatePoint pt = AggregatePoint.builder()
+                        .time(timeValue)
+                        .count(countValue)
+                        .valuesSum(sumValue)
+                        .squaredValuesSum(sumSqValue)
+                        .build();
+                baselinePoints.add(pt);
+            } catch (NumberFormatException e) {
+                // Ignore value
             }
         }
         return baselinePoints;
