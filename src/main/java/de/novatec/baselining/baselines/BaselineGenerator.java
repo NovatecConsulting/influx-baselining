@@ -25,8 +25,6 @@ public class BaselineGenerator {
 
     private InfluxAccess influx;
 
-    private String database;
-
     private BaselineDataSource src;
 
     private long precisionMillis;
@@ -39,7 +37,6 @@ public class BaselineGenerator {
 
     public BaselineGenerator(InfluxAccess influx, BaselineDataSource src, AbstractBaselineDefinition definition) {
         this.influx = influx;
-        this.database = definition.getOutput().getDatabase();
         this.src = src;
         this.precisionMillis = definition.getPrecision().toMillis();
         this.seasonalityMillis = definition.getSeasonality().toMillis();
@@ -108,7 +105,7 @@ public class BaselineGenerator {
         long seasonIntervalCount = getIntervalIndex(seasonalityMillis);
 
         long previousRelevant = Math.min(endInterval, startInterval + seasonIntervalCount);
-        Map<TagValues, List<AggregatePoint>> previousBaselines = fetchInfinityBaselines(database, startInterval, previousRelevant);
+        Map<TagValues, List<AggregatePoint>> previousBaselines = fetchInfinityBaselines(outputPrefix.getDatabase(), startInterval, previousRelevant);
 
         Map<TagValues, List<AggregatePoint>> newData = src.fetch(precisionMillis, startInterval, endInterval);
 
@@ -155,8 +152,8 @@ public class BaselineGenerator {
         String durationSuffix = "_" + InfluxUtils.prettyPrintDuration(windowDuration);
         long windowIntervalCount = windowDuration / precisionMillis;
 
-        Map<TagValues, List<AggregatePoint>> now = fetchInfinityBaselines(database, startInterval, endInterval);
-        Map<TagValues, List<AggregatePoint>> past = fetchInfinityBaselines(database, startInterval - windowIntervalCount, endInterval - windowIntervalCount);
+        Map<TagValues, List<AggregatePoint>> now = fetchInfinityBaselines(outputPrefix.getDatabase(), startInterval, endInterval);
+        Map<TagValues, List<AggregatePoint>> past = fetchInfinityBaselines(outputPrefix.getDatabase(), startInterval - windowIntervalCount, endInterval - windowIntervalCount);
 
         Set<TagValues> allTags = new HashSet<>();
         allTags.addAll(now.keySet());
