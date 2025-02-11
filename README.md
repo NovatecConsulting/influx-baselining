@@ -50,15 +50,18 @@ The application is configured by placing an `application.yml` file next to the J
 
 In the `application.yml` it is first required that you configure the connection to influx:
 ```
-spring:
-  influx:
-    url: http://localhost:8086
-    user: "myuser" # OPTIONAL: username used to connect to influx
-    password: "mypw" # OPTIONAL: password used to connect to influx
-  
-    connect-timeout: 60s # OPTIONAL: timeout to use when connecting to influx
-    read-timeout: 60s # OPTIONAL: timeout to use when reading data from influx
-    write-timeout: 60s # OPTIONAL: timeout to use when writing data to influx
+influx:
+  url: http://localhost:8086
+  username: "myuser" 
+  password: "mypw"
+  token: "mytoken"
+  bucket: "mybucket"
+  org: "myorg"
+
+  loglevel: BASIC # OPTIONAL: Log level for HTTP requests and responses
+  connect-timeout: 60s # OPTIONAL: timeout to use when connecting to influx
+  read-timeout: 60s # OPTIONAL: timeout to use when reading data from influx
+  write-timeout: 60s # OPTIONAL: timeout to use when writing data to influx
 ```
 
 Next you can configure the actual baselining:
@@ -111,6 +114,7 @@ baselining:
        FROM ...
        WHERE ${timeFilter} AND ...
        GROUP BY time(60s) fill(0)
+     database: source # also the bucket name
      output: baselines.autogen.system_cpu_usage_daily
      precision: 15m
      seasonality: 1d
