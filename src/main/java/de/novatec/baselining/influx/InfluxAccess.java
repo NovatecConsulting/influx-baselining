@@ -40,6 +40,7 @@ public class InfluxAccess {
 
     /**
      * Query data via complete query.
+     * A warn message may be logged, if no data could be fetched.
      *
      * @param database the database (bucket) to query data
      * @param selectFrom the InfluxQL query
