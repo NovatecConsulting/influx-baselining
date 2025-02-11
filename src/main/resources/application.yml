@@ -1,11 +1,17 @@
+### SPRING CONFIGURATION ###
 server:
   port: 8081
 
+### INFLUX (v2) CONFIGURATION ###
 influx:
   url: http://localhost:8086
   username: "root"
   password: ""
   token: ""
+  bucket: ""
+  org: ""
+  # OPTIONAL: log level for logging the HTTP request and HTTP response
+  log-level: BASIC
   ## OPTIONAL: timeout to use when connecting to influx
   connect-timeout: 60s
   ## OPTIONAL: timeout to use when reading data from influx
@@ -13,6 +19,8 @@ influx:
   ## OPTIONAL: timeout to use when writing data to influx
   write-timeout: 60s
 
+
+### BASELINING CONFIGURATION ###
 baselining:
 
   # When starting up, the service will compute baselines based on historical data
@@ -54,6 +62,7 @@ baselining:
 #  queries:
 #    - query: |
 #        SELECT sum("counter") FROM "inspectit"."autogen"."inspectit_self_duration" WHERE ${timeFilter} GROUP BY time(1m), "component-name" fill(0)
+#      database: inspectit
 #      precision: 1m
 #      seasonality: 1d
 #      windows: [14d]

@@ -52,7 +52,7 @@ public class InfluxWrite {
                     .filter(entry -> !ObjectUtils.isEmpty(entry.getValue()))
                     .forEach(entry -> chunk.forEach(p -> p.addTag(entry.getKey(), entry.getValue())));
 
-            // Read org from influx-configuration
+            // Read org from influx configuration
             WriteParameters parameters = new WriteParameters(database, null, WritePrecision.MS, WriteConsistency.ONE);
             writePoints(chunk, parameters);
 
