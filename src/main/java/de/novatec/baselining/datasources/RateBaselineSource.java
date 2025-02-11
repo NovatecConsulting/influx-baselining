@@ -1,5 +1,6 @@
 package de.novatec.baselining.datasources;
 
+import de.novatec.baselining.config.measurement.MeasurementFieldName;
 import de.novatec.baselining.influx.InfluxAccess;
 import de.novatec.baselining.config.baselines.OutlierRemovalSettings;
 import de.novatec.baselining.config.baselines.RateBaselineDefinition;
@@ -13,23 +14,24 @@ import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/** Is this even used? */
 @Slf4j
 public class RateBaselineSource implements BaselineDataSource {
 
-    private InfluxAccess influx;
+    private final InfluxAccess influx;
 
-    private String database;
+    private final MeasurementFieldName input;
 
-    private String query;
+    private final String query;
 
-    private List<String> tags;
+    private final List<String> tags;
 
-    private OutlierRemovalSettings outlierRemovalConfig;
+    private final OutlierRemovalSettings outlierRemovalConfig;
 
     public RateBaselineSource(InfluxAccess influx, RateBaselineDefinition settings) {
         this.influx = influx;
-        this.database = settings.getOutput().getDatabase();
-        this.query = "SELECT " + settings.getField() + " FROM " + settings.getInput();
+        this.input = settings.getInput();
+        this.query = "SELECT " + input.getField() + " FROM " + input.getFullMeasurementName();
         this.tags = settings.getTags();
         this.outlierRemovalConfig = settings.getOutliers();
     }
@@ -70,7 +72,7 @@ public class RateBaselineSource implements BaselineDataSource {
         long startWithHalo = start - outlierWindowSize / 2;
         long endWithHalo = end + outlierWindowSize / 2;
 
-        Map<TagValues, List<DataPoint>> rawPoints = influx.querySingleField(database, query, startWithHalo, endWithHalo);
+        Map<TagValues, List<DataPoint>> rawPoints = influx.querySingleField(input.getDatabase(), query, startWithHalo, endWithHalo);
         if (tags != null) {
             rawPoints = Aggregations.aggregateByTags(tags, rawPoints, (a, b) -> {
                 ArrayList<DataPoint> combined = new ArrayList<>(a);

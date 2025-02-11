@@ -22,7 +22,7 @@ public class QueryDataSource implements BaselineDataSource {
 
     public QueryDataSource(InfluxAccess influx, QueryBaselineDefinition settings) {
         this.influx = influx;
-        this.database = settings.getOutput().getDatabase();
+        this.database = settings.getDatabase();
         this.queryTemplate = settings.getQuery();
     }
 

@@ -39,7 +39,7 @@ public class InfluxWrite {
         });
     }
 
-    public void writePoints(String bucket, Map<String, String> tags, List<Point> points) {
+    public void writePoints(String database, Map<String, String> tags, List<Point> points) {
         // writing in chunks
         int chunkSize = 25_000;
         int startIndex = 0;
@@ -56,7 +56,7 @@ public class InfluxWrite {
                     //.forEach(entry -> builder.tag(entry.getKey(), entry.getValue()));
 
             // Read org from influx-configuration
-            WriteParameters parameters = new WriteParameters(bucket, null, WritePrecision.NS, WriteConsistency.ONE);
+            WriteParameters parameters = new WriteParameters(database, null, WritePrecision.NS, WriteConsistency.ONE);
             writePoints(chunk, parameters);
 
             if (endIndex == points.size()) {

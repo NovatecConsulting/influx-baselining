@@ -1,5 +1,6 @@
 package de.novatec.baselining.datasources;
 
+import de.novatec.baselining.config.measurement.MeasurementFieldName;
 import de.novatec.baselining.influx.InfluxAccess;
 import de.novatec.baselining.config.baselines.CounterRatioBaselineDefinition;
 import de.novatec.baselining.config.measurement.MeasurementName;
@@ -19,27 +20,30 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CounterRatioDataSource implements BaselineDataSource {
 
-    private InfluxAccess influx;
+    private final InfluxAccess influx;
 
-    private String database;
+    private final MeasurementFieldName input;
 
-    private String numeratorQuery;
+    private final MeasurementFieldName divideBy;
 
-    private String denominatorQuery;
+    private final String numeratorQuery;
 
-    private List<String> tags;
+    private final String denominatorQuery;
 
-    private long lookBackMillis;
+    private final List<String> tags;
 
-    private long samplePrecisionMillis;
+    private final long lookBackMillis;
 
-    private MeasurementName rawOuput;
+    private final long samplePrecisionMillis;
+
+    private final MeasurementName rawOuput;
 
     public CounterRatioDataSource(InfluxAccess influx, CounterRatioBaselineDefinition settings) {
         this.influx = influx;
-        this.database = settings.getOutput().getDatabase();
-        this.numeratorQuery = "SELECT LAST(" + settings.getInput().getField() + ") FROM " + settings.getInput().getFullMeasurementName();
-        this.denominatorQuery = "SELECT LAST(" + settings.getDivideBy().getField() + ") FROM " + settings.getDivideBy().getFullMeasurementName();
+        this.input = settings.getInput();
+        this.divideBy = settings.getDivideBy();
+        this.numeratorQuery = "SELECT LAST(" + input.getField() + ") FROM " + input.getFullMeasurementName();
+        this.denominatorQuery = "SELECT LAST(" + divideBy.getField() + ") FROM " + divideBy.getFullMeasurementName();
         this.tags = settings.getTags();
         this.lookBackMillis = settings.getLookBack().toMillis();
         this.samplePrecisionMillis = settings.getSamplePrecision().toMillis();
@@ -52,8 +56,8 @@ public class CounterRatioDataSource implements BaselineDataSource {
         long start = startInterval * intervalMillis;
         long end = endInterval * intervalMillis;
 
-        Map<TagValues, List<DataPoint>> numerators = influx.queryAggregate(database, numeratorQuery, start - lookBackMillis, end, samplePrecisionMillis);
-        Map<TagValues, List<DataPoint>> denominators = influx.queryAggregate(database, denominatorQuery, start - lookBackMillis, end, samplePrecisionMillis);
+        Map<TagValues, List<DataPoint>> numerators = influx.queryAggregate(input.getDatabase(), numeratorQuery, start - lookBackMillis, end, samplePrecisionMillis);
+        Map<TagValues, List<DataPoint>> denominators = influx.queryAggregate(divideBy.getDatabase(), denominatorQuery, start - lookBackMillis, end, samplePrecisionMillis);
 
 
         if (tags != null) {

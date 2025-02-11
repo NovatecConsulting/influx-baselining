@@ -36,10 +36,24 @@ public class InfluxAccess {
         this.write = new InfluxWrite(influx.getWriteApiBlocking());
     }
 
+    /**
+     * Query data via configured query template.
+     *
+     * @param database the database (bucket) to query data
+     * @param queryTemplate the configured InfluxQL query template
+     * @return the InfluxQL query result mapped to datapoints for each unique tag combination
+     */
     public Map<TagValues, List<DataPoint>> queryTemplate(String database, String queryTemplate, long startMillis, long endMillis) {
         return query.queryTemplate(database, queryTemplate, startMillis, endMillis);
     }
 
+    /**
+     * Query data via complete query.
+     *
+     * @param database the database (bucket) to query data
+     * @param selectFrom the InfluxQL query
+     * @return the InfluxQL query result
+     */
     public InfluxQLQueryResult query(String database, String selectFrom, long startMillis, long endMillis) {
         return query.query(database, selectFrom, startMillis, endMillis);
     }

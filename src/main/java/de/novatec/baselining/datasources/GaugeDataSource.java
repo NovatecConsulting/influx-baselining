@@ -1,5 +1,6 @@
 package de.novatec.baselining.datasources;
 
+import de.novatec.baselining.config.measurement.MeasurementFieldName;
 import de.novatec.baselining.influx.InfluxAccess;
 import de.novatec.baselining.config.baselines.GaugeBaselineDefinition;
 import de.novatec.baselining.config.measurement.MeasurementName;
@@ -17,22 +18,22 @@ import java.util.Map;
 @Slf4j
 public class GaugeDataSource implements BaselineDataSource {
 
-    private InfluxAccess influx;
+    private final InfluxAccess influx;
 
-    private String database;
+    private final MeasurementFieldName input;
 
-    private String query;
+    private final String query;
 
-    private List<String> tags;
+    private final List<String> tags;
 
-    private long samplePrecisionMillis;
+    private final long samplePrecisionMillis;
 
-    private MeasurementName rawOuput;
+    private final MeasurementName rawOuput;
 
     public GaugeDataSource(InfluxAccess influx, GaugeBaselineDefinition settings) {
         this.influx = influx;
-        this.database = settings.getOutput().getDatabase();
-        this.query = "SELECT MEAN(" + settings.getInput().getField() + ") FROM " + settings.getInput().getFullMeasurementName();
+        this.input = settings.getInput();
+        this.query = "SELECT MEAN(" + input.getField() + ") FROM " + input.getFullMeasurementName();
         this.tags = settings.getTags();
         this.samplePrecisionMillis = settings.getSamplePrecision().toMillis();
         this.rawOuput = settings.getLoopBackMetric();
@@ -43,7 +44,7 @@ public class GaugeDataSource implements BaselineDataSource {
         long start = startInterval * intervalMillis;
         long end = endInterval * intervalMillis;
 
-        Map<TagValues, List<DataPoint>> rawPoints = influx.queryAggregate(database, query, start, end, samplePrecisionMillis);
+        Map<TagValues, List<DataPoint>> rawPoints = influx.queryAggregate(input.getDatabase(), query, start, end, samplePrecisionMillis);
 
         if (tags != null) {
             rawPoints = Aggregations.aggregateByTags(tags, rawPoints, (a, b) -> {

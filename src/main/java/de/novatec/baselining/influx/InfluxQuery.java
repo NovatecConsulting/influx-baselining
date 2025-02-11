@@ -36,6 +36,7 @@ public class InfluxQuery {
         };
         StringSubstitutor subst = new StringSubstitutor(lookup);
         String queryString = subst.replace(queryTemplate);
+
         InfluxQLQuery influxQLQuery = new InfluxQLQuery(queryString, database);
         InfluxQLQueryResult result = queryApi.query(influxQLQuery);
         return extractSeriesResults(result);

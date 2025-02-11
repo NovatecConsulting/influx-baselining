@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 public class BaseliningService {
 
     @Autowired
-    BaselineServiceSettings config;
+    private BaselineServiceSettings config;
 
     @Autowired
-    InfluxAccess influx;
+    private InfluxAccess influx;
 
     private List<BaselineGenerator> baselines;
 
@@ -48,6 +48,7 @@ public class BaseliningService {
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     return;
                 }
             }

@@ -264,8 +264,8 @@ public class BaselineGenerator {
         long start = startIntervall * precisionMillis;
         long end = endIntervall * precisionMillis;
 
-        String query = "SELECT sum, sumSq, seasons FROM " + outputPrefix.getFullMeasurementName() + "_inf";
-        InfluxQLQueryResult result = influx.query(database, query, start, end);
+        String selectFromQuery = "SELECT sum, sumSq, seasons FROM " + outputPrefix.getFullMeasurementName() + "_inf";
+        InfluxQLQueryResult result = influx.query(database, selectFromQuery, start, end);
 
         Map<TagValues, List<AggregatePoint>> baselines = result.getResults().stream()
                 .filter(Objects::nonNull)
