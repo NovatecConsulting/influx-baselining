@@ -1,6 +1,7 @@
 package de.novatec.baselining.config.baselines;
 
 import de.novatec.baselining.config.measurement.MeasurementName;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.time.DurationMin;
@@ -15,6 +16,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class AbstractBaselineDefinition {
+
     @NotNull
     @Valid
     private MeasurementName output;

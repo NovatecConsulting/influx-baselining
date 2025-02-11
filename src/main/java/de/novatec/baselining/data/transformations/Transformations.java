@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 public class Transformations {
 
     /**
-     * Returns teh difference betweens successive points
+     * Returns the difference betweens successive points
      *
      * @param points
      */

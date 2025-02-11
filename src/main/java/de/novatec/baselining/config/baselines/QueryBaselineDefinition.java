@@ -12,6 +12,9 @@ import jakarta.validation.constraints.NotBlank;
 public class QueryBaselineDefinition extends AbstractBaselineDefinition {
 
     @NotBlank
+    private String database;
+
+    @NotBlank
     private String query;
 
 }

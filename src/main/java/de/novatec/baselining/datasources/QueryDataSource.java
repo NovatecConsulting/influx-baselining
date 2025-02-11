@@ -1,30 +1,28 @@
 package de.novatec.baselining.datasources;
 
-import de.novatec.baselining.InfluxAccess;
-import de.novatec.baselining.config.baselines.GaugeBaselineDefinition;
+import de.novatec.baselining.influx.InfluxAccess;
 import de.novatec.baselining.config.baselines.QueryBaselineDefinition;
-import de.novatec.baselining.config.measurement.MeasurementName;
 import de.novatec.baselining.data.AggregatePoint;
 import de.novatec.baselining.data.DataPoint;
 import de.novatec.baselining.data.TagValues;
-import de.novatec.baselining.data.transformations.Aggregations;
 import de.novatec.baselining.data.transformations.Transformations;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 public class QueryDataSource implements BaselineDataSource {
 
+    private final InfluxAccess influx;
 
-    private InfluxAccess influx;
+    private final String database;
 
-    private String queryTemplate;
+    private final String queryTemplate;
 
     public QueryDataSource(InfluxAccess influx, QueryBaselineDefinition settings) {
         this.influx = influx;
+        this.database = settings.getDatabase();
         this.queryTemplate = settings.getQuery();
     }
 
@@ -33,7 +31,7 @@ public class QueryDataSource implements BaselineDataSource {
         long start = startInterval * intervalMillis;
         long end = endInterval * intervalMillis;
 
-        Map<TagValues, List<DataPoint>> rawPoints = influx.queryTemplate(queryTemplate, start, end);
+        Map<TagValues, List<DataPoint>> rawPoints = influx.queryTemplate(database, queryTemplate, start, end);
 
         return Transformations.meanByInterval(rawPoints, intervalMillis);
     }

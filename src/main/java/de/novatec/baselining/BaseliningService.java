@@ -4,6 +4,7 @@ import de.novatec.baselining.baselines.BaselineGenerator;
 import de.novatec.baselining.config.BaselineServiceSettings;
 import de.novatec.baselining.config.baselines.AbstractBaselineDefinition;
 import de.novatec.baselining.datasources.*;
+import de.novatec.baselining.influx.InfluxAccess;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,10 +21,10 @@ import java.util.stream.Collectors;
 public class BaseliningService {
 
     @Autowired
-    BaselineServiceSettings config;
+    private BaselineServiceSettings config;
 
     @Autowired
-    InfluxAccess influx;
+    private InfluxAccess influx;
 
     private List<BaselineGenerator> baselines;
 
@@ -47,12 +48,19 @@ public class BaseliningService {
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     return;
                 }
             }
         }).start();
     }
 
+    /**
+     * This method is executed regularly. Depending on the baselining configuration, the baselines will be updated.
+     * First the original data and existing baselines are queried.
+     * After that the new information is used to update and extend the baselines.
+     * This process will be repeated for every configured data source.
+     */
     private void updateAll() {
         for (BaselineGenerator generator : baselines) {
             long now = System.currentTimeMillis() - config.getUpdateDelay().toMillis() - generator.getMinimumDelayMillis();
@@ -70,6 +78,9 @@ public class BaseliningService {
         }
     }
 
+    /**
+     * @return the collection of baseline generators for all query data sources
+     */
     private List<BaselineGenerator> buildQueryBaselines() {
     return config.getQueries().stream()
                 .map(definition -> {
@@ -79,6 +90,9 @@ public class BaseliningService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @return the collection of baseline generators for all gauge data sources
+     */
     private List<BaselineGenerator> buildGaugeBaselines() {
         return config.getGauges().stream()
                 .map(definition -> {
@@ -88,7 +102,9 @@ public class BaseliningService {
                 .collect(Collectors.toList());
     }
 
-
+    /**
+     * @return the collection of baseline generators for all counter data sources
+     */
     private List<BaselineGenerator> buildCounterBaselines() {
         return config.getCounters().stream()
                 .map(definition -> {
@@ -98,6 +114,9 @@ public class BaseliningService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @return the collection of baseline generators for all ratio data sources
+     */
     private List<BaselineGenerator> buildCounterRatioBaselines() {
         return config.getCounterRatios().stream()
                 .map(definition -> {
@@ -107,6 +126,9 @@ public class BaseliningService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @return the collection of baseline generators for all rate data sources
+     */
     private List<BaselineGenerator> buildRateBaselines() {
         return config.getRates().stream()
                 .map(definition -> {
@@ -116,6 +138,9 @@ public class BaseliningService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @return the baseline generator for the provided data source
+     */
     private BaselineGenerator buildBaselineGenerator(AbstractBaselineDefinition definition, BaselineDataSource source) {
         return new BaselineGenerator(influx, source, definition);
     }

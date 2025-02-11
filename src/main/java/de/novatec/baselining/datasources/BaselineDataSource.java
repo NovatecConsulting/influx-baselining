@@ -12,7 +12,7 @@ import java.util.Map;
 public interface BaselineDataSource {
 
     /**
-     * Provides the data for buildign a baseline over a specified time range.
+     * Provides the data for building a baseline over a specified time range.
      * <p>
      * Baselines operator on intervals, which are specified by the precision setting.
      * It is required, that this method returns at most one point per interval.
