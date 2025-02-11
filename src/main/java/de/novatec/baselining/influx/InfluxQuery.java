@@ -42,10 +42,6 @@ public class InfluxQuery {
         return extractSeriesResults(result);
     }
 
-    public InfluxQLQueryResult query(String database, String selectFrom, long startMillis, long endMillis) {
-        return query(database, selectFrom, null, "*", startMillis, endMillis);
-    }
-
     public InfluxQLQueryResult query(String database, String selectFrom, String filter, String groupBy, long startMillis, long endMillis) {
         StringBuilder query = new StringBuilder(selectFrom);
         query.append(" WHERE ").append(buildTimeFilter(startMillis, endMillis));
@@ -60,6 +56,10 @@ public class InfluxQuery {
             log.error("Exception while executing InfluxDB query.", e);
             return EMPTY_QUERY_RESULT;
         }
+    }
+
+    public InfluxQLQueryResult query(String database, String selectFrom, long startMillis, long endMillis) {
+        return query(database, selectFrom, null, "*", startMillis, endMillis);
     }
 
     public Map<TagValues, List<DataPoint>> querySingleField(String database, String selectFrom, long startMillis, long endMillis) {

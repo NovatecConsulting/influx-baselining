@@ -15,7 +15,6 @@ import com.influxdb.client.write.Point;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -247,7 +246,7 @@ public class BaselineGenerator {
         double stddev = Math.sqrt(Math.max(0, pt.getAvgSquaredValue() - value * value));
 
         Point point = new Point(measurementName);
-        point.time(pt.getTime(), WritePrecision.NS)  // TODO Passt das? Von wo kommt time?
+        point.time(pt.getTime(), WritePrecision.MS)
             .addField("value", value)
             .addField("stddev", stddev)
             .addField("seasons", pt.getCount())

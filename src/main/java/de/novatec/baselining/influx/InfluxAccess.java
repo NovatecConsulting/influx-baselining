@@ -1,24 +1,16 @@
 package de.novatec.baselining.influx;
 
 import com.influxdb.client.InfluxDBClient;
-import com.influxdb.client.InfluxQLQueryApi;
-import com.influxdb.client.WriteApiBlocking;
-import com.influxdb.client.domain.InfluxQLQuery;
-import com.influxdb.client.domain.WritePrecision;
+import com.influxdb.client.WriteOptions;
 import com.influxdb.query.InfluxQLQueryResult;
 import de.novatec.baselining.data.DataPoint;
 import de.novatec.baselining.data.TagValues;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.StringSubstitutor;
-import org.apache.commons.text.lookup.StringLookup;
 import com.influxdb.client.write.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ObjectUtils;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -32,8 +24,7 @@ public class InfluxAccess {
     public InfluxAccess(InfluxDBClient influx) {
         // we still use InfluxQL instead of Flux
         this.query = new InfluxQuery(influx.getInfluxQLQueryApi());
-        // we use blocking api to be synchronous
-        this.write = new InfluxWrite(influx.getWriteApiBlocking());
+        this.write = new InfluxWrite(influx.makeWriteApi(WriteOptions.DEFAULTS));
     }
 
     /**
@@ -66,7 +57,6 @@ public class InfluxAccess {
         return query.queryAggregate(database, selectFrom, startMillis, endMillis, intervalMillis);
     }
 
-    // TODO Should the rp be included into the measurement name???
     public void writePoints(String database, String measurement, Map<TagValues, ? extends Collection<DataPoint>> points) {
         write.writePoints(database, measurement, points);
     }

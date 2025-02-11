@@ -1,6 +1,6 @@
 package de.novatec.baselining.influx;
 
-import com.influxdb.client.WriteApiBlocking;
+import com.influxdb.client.WriteApi;
 import com.influxdb.client.domain.WriteConsistency;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
@@ -13,15 +13,14 @@ import org.springframework.util.ObjectUtils;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class InfluxWrite {
 
-    private final WriteApiBlocking writeApi;
+    private final WriteApi writeApi;
 
-    public InfluxWrite(WriteApiBlocking writeApi) {
+    public InfluxWrite(WriteApi writeApi) {
         this.writeApi = writeApi;
     }
 
@@ -29,7 +28,7 @@ public class InfluxWrite {
         points.forEach((tags, pts) -> {
             List<Point> converted = pts.stream()
                     .map(pt -> new Point(measurement)
-                            .time(pt.getTime(), WritePrecision.NS) // TODO Does this work?
+                            .time(pt.getTime(), WritePrecision.MS)
                             .addField("value", pt.getValue())
                     )
                     .collect(Collectors.toList());
@@ -49,14 +48,12 @@ public class InfluxWrite {
         while (!done) {
             List<Point> chunk = points.subList(startIndex, endIndex);
 
-            // TODO passt das?
             tags.entrySet().stream()
                     .filter(entry -> !ObjectUtils.isEmpty(entry.getValue()))
                     .forEach(entry -> chunk.forEach(p -> p.addTag(entry.getKey(), entry.getValue())));
-                    //.forEach(entry -> builder.tag(entry.getKey(), entry.getValue()));
 
             // Read org from influx-configuration
-            WriteParameters parameters = new WriteParameters(database, null, WritePrecision.NS, WriteConsistency.ONE);
+            WriteParameters parameters = new WriteParameters(database, null, WritePrecision.MS, WriteConsistency.ONE);
             writePoints(chunk, parameters);
 
             if (endIndex == points.size()) {
