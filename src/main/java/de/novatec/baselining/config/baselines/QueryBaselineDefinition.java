@@ -1,5 +1,6 @@
 package de.novatec.baselining.config.baselines;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,8 +12,8 @@ import jakarta.validation.constraints.NotBlank;
 @NoArgsConstructor
 public class QueryBaselineDefinition extends AbstractBaselineDefinition {
 
-    @NotBlank
-    private String database;
+    @NotNull
+    private String database = "";
 
     @NotBlank
     private String query;
