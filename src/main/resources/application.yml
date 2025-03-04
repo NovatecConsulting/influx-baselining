@@ -32,6 +32,9 @@ baselining:
   # E.g. a delay of 30s means that the baselines for 14:00 to 15:00 will be computed at 15:00:30
   update-delay: 30s
 
+  # extract the database from the query via regex
+  derive-database-from-query: false
+
 #  #Baselines for gauge metrics
 #  gauges:
 #    - precision: 15m
