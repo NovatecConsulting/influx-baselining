@@ -3,7 +3,7 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'java'
-    id "org.cyclonedx.bom" version "2.1.0"
+    id "org.cyclonedx.bom" version "2.2.0"
     id "org.owasp.dependencycheck" version "12.1.0"
     id "com.github.ben-manes.versions" version "0.52.0"
 }
