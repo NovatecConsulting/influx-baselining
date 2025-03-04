@@ -84,7 +84,7 @@ public class BaseliningService {
     private List<BaselineGenerator> buildQueryBaselines() {
     return config.getQueries().stream()
                 .map(definition -> {
-                    QueryDataSource src = new QueryDataSource(influx, definition);
+                    QueryDataSource src = new QueryDataSource(influx, config, definition);
                     return buildBaselineGenerator(definition, src);
                 })
                 .collect(Collectors.toList());

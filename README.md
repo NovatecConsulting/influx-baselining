@@ -77,6 +77,9 @@ baselining:
   # E.g. a delay of 30s means that the baselines for 14:00 to 15:00 will be computed at 15:00:30
   update-delay: 30s
   
+  # extract the database from queries via regex
+  derive-database-from-query: false
+  
   #Baselines for gauge metrics
   gauges:
     - precision: 15m
@@ -142,6 +145,14 @@ The values of all other tags will be aggregated together.
 For example, if we assume that the `http_requests_count` measurement has two tags (`http_path` and `http_status`),
 we can specify `tags: [http_path]` as shown above. This means that the baseline will be generated for each http_path individually,
 however the `http_status` will not be used for differentiation.
+
+#### Derive database from query
+
+If the property `baselining.derive-database-from-query` is set to true and no `database` was explicitly specified for 
+a particular query, the service will try to extract the database via regex. 
+By default, the property is set to false.
+If the `database` is specified, it will always be used for the particular query!
+The property should reduce the effort to specify the database for a long list of simple queries.
 
 ## SBOM
 

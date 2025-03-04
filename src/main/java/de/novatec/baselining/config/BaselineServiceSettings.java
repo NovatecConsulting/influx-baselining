@@ -23,6 +23,12 @@ public class BaselineServiceSettings {
 
     private Duration backfill;
 
+    /**
+     * True, if the database for queries should be extracted via regex from the query body.
+     * False, if the database should be explicitly specified for every query.
+     */
+    private boolean deriveDatabaseFromQuery = false;
+
     private List<@Valid QueryBaselineDefinition> queries = new ArrayList<>();
     private List<@Valid GaugeBaselineDefinition> gauges = new ArrayList<>();
     private List<@Valid RateBaselineDefinition> rates = new ArrayList<>();
